@@ -11,7 +11,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://mutual-fund-analyzer-1.onrender.com"
+        "https://mutual-fund-analyzer-tau.vercel.app",
     ],
     allow_credentials=False,
     allow_methods=["*"],

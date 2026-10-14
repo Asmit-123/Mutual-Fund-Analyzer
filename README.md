@@ -142,5 +142,5 @@ npm run dev
 
 ### 4. Try it out!
 
-Go to [http://localhost:3000](http://localhost:3000) in your browser.
+Go to [http://localhost:3000](https://mutual-fund-analyzer-tau.vercel.app/) in your browser.
 Try typing: _"Compare Axis Bluechip with HDFC Top 100, and also create a SIP plan for reaching 1 Crore in 10 years."_

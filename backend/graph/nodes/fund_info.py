@@ -92,7 +92,17 @@ For each available scheme include:
 - Scheme name, plan/option, scheme code and ISIN when available.
 - NAV start/end dates and NAV values.
 - Total return, CAGR, annualized volatility and maximum drawdown.
-- Number of NAV observations and data source.
+- Number of unique NAV observations AND number of periodic return intervals (these
+  counts differ by one for a continuous series).
+- Data source and the supplied data-quality checks: invalid rows discarded,
+  duplicate rows removed, largest calendar gap, and whether the latest historical
+  NAV matches the current AMFI scheme-master NAV/date when that check is available.
+- State the volatility annualization factor and method (sample standard deviation
+  of consecutive NAV returns multiplied by sqrt(252)).
+- State the maximum-drawdown method (largest decline from a running NAV peak).
+- If the latest historical NAV does not match the current scheme-master NAV/date,
+  clearly flag the mismatch as a data freshness/reconciliation warning; do not
+  silently claim that the series is fully reconciled.
 Explain metrics accurately using these definitions:
 - Growth option: the return is calculated from the NAV change. Income and gains
   remain invested in the scheme and are reflected in its NAV; do not describe
@@ -103,7 +113,8 @@ Explain metrics accurately using these definitions:
 - Maximum drawdown: the largest peak-to-trough percentage decline in the
   observed NAV series during the selected period.
 - Observation count: the number of unique NAV dates included in the selected
-  calculation window, not the number of return intervals.
+  calculation window, not the number of return intervals. The periodic return
+  count is normally one less than the observation count.
 State that historical returns are not guarantees.
 If a fund failed, explain that its data was unavailable; do not fill gaps with estimates.
 

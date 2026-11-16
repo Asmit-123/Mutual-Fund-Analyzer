@@ -92,7 +92,7 @@ Ensure you have the following installed:
 
 - [Node.js](https://nodejs.org/en/)
 - [Python 3.10+](https://www.python.org/)
-- An [OpenAI API Key](https://platform.openai.com)
+- A [Groq API Key](https://console.groq.com/)
 - A [Tavily API Key](https://tavily.com/)
 
 ### 2. Backend Setup
@@ -112,7 +112,7 @@ pip install -r requirements.txt
 
 # 4. Setup your Environment Variables
 # Create a .env file containing:
-# OPENAI_API_KEY=your_openai_key
+# GROQ_API_KEY=your_groq_key
 # TAVILY_API_KEY=your_tavily_key
 
 # 5. Start the backend server

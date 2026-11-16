@@ -6,7 +6,7 @@ The analytics layer consumes normalized NAV observations, not provider HTML.
 """
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 import math
 import re
@@ -153,16 +153,43 @@ def _fetch_mfapi_history(
     return sorted(observations, key=lambda item: item["date"])
 
 
+def _anniversary_date(as_of: date, years: int) -> date:
+    """Subtract calendar years, handling leap-day anniversaries safely."""
+    try:
+        return as_of.replace(year=as_of.year - years)
+    except ValueError:
+        # Feb 29 -> Feb 28 in a non-leap target year.
+        return as_of.replace(year=as_of.year - years, day=28)
+
+
 def _calculate_metrics(
     observations: list[dict[str, Any]], period_years: int
 ) -> dict[str, Any]:
-    cutoff = date.today() - timedelta(days=round(period_years * 365.25))
-    points = [item for item in observations if item["date"] >= cutoff]
+    ordered = sorted(
+        (item for item in observations if item.get("nav", 0) > 0),
+        key=lambda item: item["date"],
+    )
+    if len(ordered) < 2:
+        raise MarketDataError("Insufficient valid NAV observations.")
+
+    # Anchor the requested window to the latest NAV actually available, not
+    # the server's current date. For weekends/holidays, use the last NAV on or
+    # before the calendar anniversary (never the next trading day's NAV).
+    last = ordered[-1]
+    anniversary = _anniversary_date(last["date"], period_years)
+    eligible_starts = [i for i, item in enumerate(ordered) if item["date"] <= anniversary]
+    if not eligible_starts:
+        raise MarketDataError(
+            f"NAV history does not reach the {period_years}-year anniversary "
+            f"({anniversary.isoformat()})."
+        )
+    start_index = eligible_starts[-1]
+    points = ordered[start_index:]
     if len(points) < 2:
         raise MarketDataError(
             f"Only {len(points)} NAV observation(s) were available for the requested period."
         )
-    first, last = points[0], points[-1]
+    first = points[0]
     elapsed_days = (last["date"] - first["date"]).days
     if elapsed_days <= 0:
         raise MarketDataError("NAV history does not cover a positive time interval.")
@@ -199,6 +226,7 @@ def _calculate_metrics(
         "annualized_volatility_pct": round(volatility, 2) if volatility is not None else None,
         "max_drawdown_pct": round(max_drawdown, 2),
         "observations": len(points),
+        "anniversary_date": anniversary.isoformat(),
     }
 
 
@@ -238,8 +266,9 @@ def get_fund_analytics(fund_name: str, period_years: int = 1) -> dict[str, Any]:
         "isin": scheme["isin"],
         "plan": scheme["plan"],
         "option": scheme["option"],
-        "data_source": history[-1].get("source", "AMFI"),
-        "source_fallback_used": history[-1].get("source") != "AMFI",
+        "data_source": ", ".join(sorted({item.get("source", "AMFI") for item in history})),
+        "source_fallback_used": any(item.get("source") != "AMFI" for item in history),
+        "data_retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
         "data_method": "Historical NAV time series; metrics calculated by this application",
     })
     return metrics

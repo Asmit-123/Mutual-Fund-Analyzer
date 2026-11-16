@@ -25,10 +25,17 @@ def search_schemes(query: str, limit: int = 20) -> list[dict[str, str]]:
         schemes = _fetch_amfi_scheme_master(session)
     matches = []
     for scheme in schemes:
-        name = _normalize_name(scheme["scheme_name"])
+        display_name = " - ".join(
+            part.strip() for part in (
+                scheme.get("scheme_name", ""),
+                scheme.get("plan", ""),
+                scheme.get("option", ""),
+            ) if part and part.strip()
+        )
+        name = _normalize_name(display_name)
         if all(token in name for token in tokens):
             matches.append({
-                "scheme_name": scheme["scheme_name"],
+                "scheme_name": display_name,
                 "scheme_code": scheme["scheme_code"],
                 "isin": scheme.get("isin", ""),
                 "plan": scheme.get("plan", ""),

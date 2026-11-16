@@ -50,3 +50,19 @@ def test_metrics_are_anchored_to_latest_observation_not_server_date():
 
     assert result["start_date"] == "2025-11-13"
     assert result["end_date"] == "2026-11-13"
+
+
+
+def test_duplicate_calendar_dates_count_as_one_nav_observation():
+    observations = [
+        nav("2025-11-13", 94.0058),
+        nav("2025-11-13", 94.0058),
+        nav("2026-11-13", 94.2594),
+        nav("2026-11-13", 94.2594),
+    ]
+
+    result = _calculate_metrics(observations, 1)
+
+    assert result["observations"] == 2
+    assert result["start_date"] == "2025-11-13"
+    assert result["end_date"] == "2026-11-13"

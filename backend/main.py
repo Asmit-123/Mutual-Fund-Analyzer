@@ -11,6 +11,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://mutual-fund-analyzer-rho.vercel.app",
         "https://mutual-fund-analyzer-asmitbhattacharyya12-8035.vercel.app",
         "https://mutual-fund-analyzer-git-master-asmitbhattacharyya12-8035.vercel.app",
         "https://mutual-fund-analyzer-tau.vercel.app",

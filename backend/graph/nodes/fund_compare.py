@@ -1,11 +1,10 @@
 from graph.nodes.fund_info import fetch_nav
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from graph.state import AgentState
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 def compare_fund_node(state: AgentState) -> dict:
     print("compare_fund_node")

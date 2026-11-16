@@ -1,8 +1,8 @@
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 import json
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 def extract_winner_node(state: dict) -> dict:
     tool_results = state.get("tool_results", {})

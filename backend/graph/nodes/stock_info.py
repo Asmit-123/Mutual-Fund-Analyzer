@@ -1,11 +1,11 @@
 import json
 import yfinance as yf
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from graph.state import AgentState
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.1)
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.1, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 
 def _resolve_ticker(name: str) -> str:

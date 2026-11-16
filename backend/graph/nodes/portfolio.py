@@ -1,10 +1,10 @@
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from graph.state import AgentState
 from dotenv import load_dotenv
 import json
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 
 def _extract_holdings_from_query(query: str):

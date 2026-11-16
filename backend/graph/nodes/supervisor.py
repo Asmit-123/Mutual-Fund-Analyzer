@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Literal, List, Optional, Dict
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import SystemMessage, HumanMessage
 from dotenv import load_dotenv
 load_dotenv()
@@ -225,7 +225,7 @@ ENTITY EXTRACTION RULES
 FALLBACK: If truly unclear → tasks: [qa_search]
 """
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 router_llm = llm.with_structured_output(RouterDecision, method="function_calling")
 

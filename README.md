@@ -30,7 +30,7 @@ The ranking is intentionally transparent and reproducible. Each metric is min-ma
 | Annualized volatility | 30% | Lower |
 | Maximum drawdown | 30% | Shallower / less negative |
 
-The weighted score determines the ordering. The LLM explains the ranking using the supplied figures; it does not invent or alter financial values. Scores are **relative to the selected funds**, not universal ratings or forecasts. Comparisons across different fund categories may not be like-for-like.
+The LLM produces the final ranking and writes the reasons using the supplied figures and composite scores. Its returned scheme order is validated to ensure every selected scheme appears exactly once. If the LLM is unavailable or returns an invalid ranking, the application falls back to the deterministic composite-score order. Scores are **relative to the selected funds**, not universal ratings or forecasts. Comparisons across different fund categories may not be like-for-like.
 
 ## Data sources and calculation policy
 

@@ -8,7 +8,8 @@ from pathlib import Path
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
+# Groq retired llama-3.3-70b-versatile on 2026-08-16.
+llm = ChatGroq(model="openai/gpt-oss-120b", temperature=0.2)
 
 def fetch_advisorkhoj_capture_ratio(fund_name: str, period_years: int) -> dict:
     print(f"fetch_advisorkhoj_capture_ratio for {fund_name}, period: {period_years}")
@@ -31,11 +32,8 @@ def fetch_advisorkhoj_capture_ratio(fund_name: str, period_years: int) -> dict:
         
         soup = BeautifulSoup(response.text, 'html.parser')
         
-        # Locate the cells containing the specific text and grab the adjacent value
         up_td = soup.find('td', text=lambda t: t and 'Up Market Capture Ratio' in t)
         down_td = soup.find('td', text=lambda t: t and 'Down Market Capture Ratio' in t)
-        
-        # Find 'Capture Ratio' but exclude the Up/Down variants to get the overall ratio
         overall_td = soup.find('td', text=lambda t: t and 'Capture Ratio' in t and 'Up' not in t and 'Down' not in t)
 
         up_capture = up_td.find_next_sibling('td').text.strip() if up_td else "N/A"
@@ -59,12 +57,12 @@ def fetch_advisorkhoj_capture_ratio(fund_name: str, period_years: int) -> dict:
 
 def fund_info_node(state: AgentState) -> dict:
     funds = state.get("fund_names", [])
-    period = state.get("period", 1) # Default to 1 if not set in state
+    period = state.get("period", 1)
     
     if not funds:
         msg = "No specific fund names provided. Could not fetch fund info."
         return {
-            "tool_result":  msg,
+            "tool_result": msg,
             "tool_results": {"fund_info": msg},
         }
 
@@ -75,7 +73,6 @@ def fund_info_node(state: AgentState) -> dict:
         if filtered:
             context_str = f"Context from previous tools:\n{filtered}\n\n"
 
-    # Fetch AdvisorKhoj data for every chosen fund
     extracted_data = []
     for fund in funds:
         data = fetch_advisorkhoj_capture_ratio(fund, period)
@@ -85,7 +82,6 @@ def fund_info_node(state: AgentState) -> dict:
     data_dump = json.dumps(extracted_data, indent=2)
     query = state["messages"][-1].content
 
-    # Updated prompt to specifically rank based on the scraped data as required
     PROMPT = f"""
     {context_str}
     You are an expert mutual fund analyst.
@@ -106,6 +102,6 @@ def fund_info_node(state: AgentState) -> dict:
     final_result = response.content
 
     return {
-        "tool_result":  final_result,
+        "tool_result": final_result,
         "tool_results": {"fund_info": final_result},
     }

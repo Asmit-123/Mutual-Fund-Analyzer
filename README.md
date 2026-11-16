@@ -1,146 +1,154 @@
 # Mutual Fund Analyzer
 
-Mutual Fund Analyzer is an AI-powered, stateless, single-turn financial assistant built specifically for the Indian market. It leverages multi-agent architecture and parallel processing to answer complex financial queries, compare funds, analyze mutual fund portfolios, calculate SIP plans, and understand market sentiments in real-time.
+A deployed Indian mutual-fund research application that turns a selection of **2–10 schemes** into an AI-written, ranked PDF report. It uses live AMFI scheme data and historical NAVs, calculates the financial metrics in Python, and uses an LLM for the executive summary and fund-wise ranking explanations.
 
-<img width="1470" height="832" alt="Screenshot 2026-04-07 at 7 20 28 PM" src="https://github.com/user-attachments/assets/c93ea46b-4570-4d40-9ebf-2bfd3089fd16" />
+**Live app:** https://mutual-fund-analyzer-rho.vercel.app  
+**Backend health:** https://mutual-fund-analyzer-api-bqho.onrender.com/health
 
----
+## What it does
 
-## 🎯 The Problem & Solution Approach
+### Multi-fund PDF report
+- Search the live AMFI scheme master and select 2–10 schemes.
+- Paste a custom list of scheme names (one per line, comma or semicolon separated).
+- Choose a 1, 3, 5, or 10-year analysis period.
+- Fetch historical NAV data for every selected scheme.
+- Calculate total return, CAGR, annualized volatility, and maximum drawdown.
+- Rank the selected funds using a disclosed composite risk/return score.
+- Ask the LLM to write the executive summary and evidence-based reason for each ranking position.
+- Download a formatted A4 PDF with the comparison table, ranking, individual scheme details, data-quality notes, methodology, and disclaimer.
 
+### AI assistant
+The original single-fund conversational analysis remains available in the AI Assistant tab.
 
-**The Problem:** Traditional mutual fund applications behave like static databases—offering facts but no actionable insights. On the other hand, traditional conversational LLMs hallucinate stock data and struggle to analyze complex, multi-part financial goals consistently.
+## Ranking methodology
 
-**The Solution Approach:**
-To solve this, we built a **stateless, graph-linked multi-agent system**.
+The ranking is intentionally transparent and reproducible. Each metric is min-max normalized within the funds selected for that report:
 
-1. **Intelligent Routing:** A "Supervisor" node understands the user's intent(s)—even if they ask for three different things at once—and extracts relevant entities (fund names, tenure, monthly budget).
-2. **Parallel Processing:** Instead of a generic LLM thinking contextually, specialized tools (e.g. `sip_calculator`, `fund_compare`) trigger simultaneously to parse exact math or fetch real-time data using search tools.
-3. **Structured Synthesis:** A "Synthesizer" gathers all raw analytical outputs, enforces financial disclaimers, and styles a clean HTML response rendered seamlessly on the user's screen.
-4. **Scope Control:** Non-financial queries are actively intercepted and politely rejected to maintain a premium advisory character.
+| Metric | Weight | Preferred direction |
+|---|---:|---|
+| CAGR | 40% | Higher |
+| Annualized volatility | 30% | Lower |
+| Maximum drawdown | 30% | Shallower / less negative |
 
-### High-Level Architecture Flow
+The weighted score determines the ordering. The LLM explains the ranking using the supplied figures; it does not invent or alter financial values. Scores are **relative to the selected funds**, not universal ratings or forecasts. Comparisons across different fund categories may not be like-for-like.
 
-```mermaid
-graph TD
-    User([User Query]) --> API[FastAPI Endpoint]
-    API --> Supervisor[Supervisor Agent]
+## Data sources and calculation policy
 
-    Supervisor -->|Intent Extraction| Router{Fan-out Router}
+- **Primary source:** AMFI public scheme master and historical NAV archive.
+- **Fallback:** MFapi.in, used when AMFI historical retrieval is unavailable or insufficient.
+- All reported metrics are calculated by this application from NAV observations.
+- Invalid/non-positive NAVs are discarded; identical same-date observations are deduplicated; conflicting same-date NAVs are rejected.
+- Volatility is the sample standard deviation of consecutive NAV returns annualized by √252.
+- Maximum drawdown is the largest peak-to-subsequent-trough decline in the selected NAV series.
+- The application reports observation counts, return-interval counts, calendar gaps, and whether the latest historical NAV reconciles with the current AMFI scheme-master NAV/date.
+- Benchmark TRI data is not yet integrated. Consequently, benchmark-relative alpha, beta, Sharpe ratio, information ratio, and market-capture ratios are not presented.
 
-    Router -->|Detailed info| FundInfo(Fund Info Agent)
-    Router -->|Fund VS Fund| Compare(Fund Compare Agent)
-    Router -->|Future Planning| SIP(SIP Calculator)
-    Router -->|Existing Planning| Goal(Goal Tracker)
-    Router -->|Headline Fetch| News(News Agent)
-    Router -->|Market Checks| Sentiment(Sentiment Agent)
-    Router -->|Wealth Building| Advisor(Financial Advisor)
-    Router -->|Holdings Check| Portfolio(Portfolio Agent)
-    Router -->|Educational| QA(Q&A Search)
-    Router -->|Non-Finance| OOS[Out of Scope Filter]
+Historical performance is not a guarantee of future returns. This application provides informational research and is not personalized investment advice.
 
-    FundInfo -.-> Synth[Synthesizer Node]
-    Compare -.-> Synth
-    SIP -.-> Synth
-    Goal -.-> Synth
-    News -.-> Synth
-    Sentiment -.-> Synth
-    Advisor -.-> Synth
-    Portfolio -.-> Synth
-    QA -.-> Synth
-    OOS -.-> Synth
+## Architecture
 
-    Synth -->|Synthesizes Aggregated Web HTML| UI[Next.js Frontend]
-```
+- **Frontend:** Next.js 16, React 19, html2pdf.js; deployed on Vercel.
+- **Backend:** Python, FastAPI; deployed on Render.
+- **AI orchestration:** LangGraph.
+- **LLM:** Groq, openai/gpt-oss-120b.
+- **NAV ingestion:** AMFI with MFapi.in fallback.
+- **CI:** GitHub Actions runs backend NAV and comparison tests on relevant pushes and pull requests.
 
----
+## API
 
-## 🚀 Features
+### GET /health
+Returns backend health status.
 
-- **Fund Comparison:** Pit two or more mutual funds against each other to receive a definitive verdict.
-- **SIP Planning & Tracking:** Enter a target corpus or an existing SIP amount; the AI will back-test and forecast feasibility.
-- **Market Sentiment & News:** Gets instantaneous updates on Nifty/Sensex movements and summarizes the bullish/bearish market sentiment.
-- **Portfolio Reviewer:** Feed your holdings. The analyzer reviews sector diversifications and generic asset allocation principles.
-- **Holistic Financial Advice:** Recommends standard best practices (e.g., 50/30/20 budget rule).
-- **Export Reports:** Beautiful built-in single-click PDF exporting on the frontend to save analyses offline.
+### GET /funds/search?q=<text>&limit=20
+Searches the current AMFI scheme master. The response contains scheme name, scheme code, ISIN, plan/option, latest NAV, and NAV date.
 
----
+### POST /compare
+Request:
+~~~json
+{
+  "fund_names": [
+    "Parag Parikh Flexi Cap Fund - Direct Plan - Growth",
+    "HDFC Flexi Cap Fund - Direct Plan - Growth"
+  ],
+  "period": 1
+}
+~~~
+Supported periods: 1, 3, 5, and 10. The endpoint requires 2–10 distinct schemes and fails the report rather than silently ranking an incomplete set if any selected scheme cannot be resolved or lacks sufficient NAV history.
 
-## 🛠 Tech Stack
+### POST /chat
+Accepts message, optional fund_names, and optional period for the conversational analysis flow.
 
-**Backend:**
+## Run locally
 
-- **Language:** Python
-- **API Framework:** FastAPI
-- **Workflow & Agent Engine:** LangGraph & LangChain
-- **LLM:** Groq (`llama-3.3-70b-versatile`)
-- **Data Integrations:** Tavily Search Engine
+### Requirements
+- Node.js 20+
+- Python 3.10+
+- Groq API key
 
-**Frontend:**
-
-- **Framework:** Next.js (React)
-
----
-
-## 💻 Local Setup & Installation
-
-Follow these steps to run the project locally.
-
-### 1. Requirements
-
-Ensure you have the following installed:
-
-- [Node.js](https://nodejs.org/en/)
-- [Python 3.10+](https://www.python.org/)
-- A [Groq API Key](https://console.groq.com/)
-- A [Tavily API Key](https://tavily.com/)
-
-### 2. Backend Setup
-
-The backend runs the LangGraph AI models and exposes the `/chat` endpoint.
-
-```bash
-# 1. Navigate to the backend directory
+### Backend
+~~~bash
 cd backend
-
-# 2. Create and activate a Virtual Environment
-python3 -m venv myenv
-source myenv/bin/activate  # On Windows use: myenv\Scripts\activate
-
-# 3. Install dependencies
+python -m venv .venv
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
+~~~
 
-# 4. Setup your Environment Variables
-# Create a .env file containing:
-# GROQ_API_KEY=your_groq_key
-# TAVILY_API_KEY=your_tavily_key
+Create backend/.env:
+~~~env
+GROQ_API_KEY=your_groq_api_key
+~~~
 
-# 5. Start the backend server
+Start the API:
+~~~bash
 uvicorn main:app --reload --port 8000
-```
+~~~
 
-_The backend should now be actively listening on `http://localhost:8000`_
-
-### 3. Frontend Setup
-
-The frontend hosts the sleek React user interface.
-
-```bash
-# 1. Navigate to the frontend directory
+### Frontend
+In a second terminal:
+~~~bash
 cd frontend
-
-# 2. Install Javascript dependencies
 npm install
+~~~
 
-# 3. Setup your Environment Variables
-# Create a .env.local file containing:
-# NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+Create frontend/.env.local:
+~~~env
+NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+~~~
 
-# 4. Run the development server
+Start Next.js:
+~~~bash
 npm run dev
-```
+~~~
 
-### 4. Try it out!
+Open http://localhost:3000.
 
-Go to [Mutual Fund Analyser](https://mutual-fund-analyzer-tau.vercel.app/) in your browser.
-Try typing: _"Compare Axis Bluechip with HDFC Top 100, and also create a SIP plan for reaching 1 Crore in 10 years."_
+## Tests
+
+From the backend directory:
+~~~bash
+python -m pytest -q tests
+~~~
+
+GitHub Actions runs the NAV analytics and multi-fund ranking tests automatically when backend files or the workflow change.
+
+## Deployment
+
+- Frontend production project: Vercel, root directory frontend.
+- Backend service: Render, start command cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT.
+- Backend environment variable: GROQ_API_KEY.
+- Frontend environment variable: NEXT_PUBLIC_BACKEND_URL=https://mutual-fund-analyzer-api-bqho.onrender.com.
+
+Never commit API keys or local .env files.
+
+## Take-home submission notes
+
+- Live URL and repository: available above.
+- Sample PDF: generate from the live app after deployment and include the downloaded PDF in the submission.
+- AI coding session log: docs/AI_SESSION_LOG.md.
+- Short demo walkthrough: docs/DEMO_SCRIPT.md.
+- Time spent: record the actual hours in the submission form; this repository does not fabricate a time estimate.
+
+## Disclaimer
+
+Past performance is not indicative of future returns. Mutual fund investments are subject to market risks. Read all scheme-related documents carefully. This tool is for informational research only and does not provide personalized investment advice.

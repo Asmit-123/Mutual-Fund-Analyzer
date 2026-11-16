@@ -161,8 +161,10 @@ def compare_funds(fund_names: list[str], period_years: int) -> dict[str, Any]:
 
     prompt = f"""
 You are writing a concise, evidence-based Indian mutual-fund comparison report.
-The application has already calculated a transparent ranking. Explain it; do not
-change the order or invent metrics.
+Use the supplied composite scores and underlying NAV metrics to make an overall
+risk/return ranking. The score is a quantitative anchor, but consider the complete
+trade-off rather than treating any single metric as decisive. Return every scheme
+exactly once, with the strongest overall profile first. Do not invent metrics.
 
 Period: {period_years} year(s)
 Ranking method: composite score = CAGR 40% + lower annualized volatility 30%
@@ -192,16 +194,32 @@ Mention trade-offs: a higher return can come with higher volatility or drawdown.
         raw = re.sub(r"^\x60{3}(?:json)?\s*|\s*\x60{3}$", "", raw, flags=re.I)
         parsed = json.loads(raw)
         ai_summary = str(parsed.get("executive_summary", "")).strip()
-        ai_reasons = {
-            str(item.get("scheme_code")): str(item.get("reason", "")).strip()
-            for item in parsed.get("ranking_reasons", [])
-            if isinstance(item, dict)
-        }
+        ai_ranking = parsed.get("ranking", [])
+        ai_codes = [
+            str(item.get("scheme_code"))
+            for item in ai_ranking
+            if isinstance(item, dict) and item.get("scheme_code") is not None
+        ]
+        expected_codes = {str(item["scheme_code"]) for item in ranked}
+        if len(ai_codes) == len(ranked) and len(set(ai_codes)) == len(ranked) and set(ai_codes) == expected_codes:
+            by_code = {str(item["scheme_code"]): item for item in ranked}
+            ranked = [by_code[code] for code in ai_codes]
+            for position, item in enumerate(ranked, start=1):
+                item["rank"] = position
+                item["ranking_reason"] = next(
+                    str(entry.get("reason", "")).strip()
+                    for entry in ai_ranking
+                    if str(entry.get("scheme_code")) == str(item["scheme_code"])
+                )
+            ranking_source = "LLM ranking validated against supplied scheme codes and NAV metrics"
+        else:
+            ranking_source = "Deterministic composite-score fallback (LLM ranking response was invalid)"
         if not ai_summary:
             ai_summary = "The ranking is based on the disclosed return and risk metrics."
     except Exception as exc:
         # Keep a useful, deterministic report available if the LLM is down or
         # returns malformed JSON. Financial figures never depend on the LLM.
+        ranking_source = "Deterministic composite-score fallback (AI unavailable)"
         print(f"AI comparison narrative unavailable: {type(exc).__name__}: {exc}")
         ai_summary = (
             "The funds are ranked using the disclosed composite score. Review the "
@@ -209,8 +227,8 @@ Mention trade-offs: a higher return can come with higher volatility or drawdown.
         )
 
     for item in ranked:
-        reason = ai_reasons.get(str(item["scheme_code"]))
-        item["ranking_reason"] = reason or _fallback_reason(item)
+        if not item.get("ranking_reason"):
+            item["ranking_reason"] = _fallback_reason(item)
 
     return {
         "period_years": period_years,
@@ -222,8 +240,9 @@ Mention trade-offs: a higher return can come with higher volatility or drawdown.
             "and benchmarks may differ, and NAV-only metrics do not establish future "
             "suitability. No validated benchmark TRI is integrated in this version."
         ),
+        "ranking_source": ranking_source,
         "ranking_method": {
-            "name": "Relative risk-return composite",
+            "name": "LLM-assisted relative risk-return ranking",
             "weights": {"CAGR": 0.40, "annualized_volatility": 0.30, "maximum_drawdown": 0.30},
             "description": (
                 "Min-max normalized within this report: higher CAGR scores better; "

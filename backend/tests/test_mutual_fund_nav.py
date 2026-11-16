@@ -31,13 +31,13 @@ def test_weekend_or_holiday_anniversary_uses_previous_available_nav():
         nav("2024-06-14", 100.0),
         # Anniversary is Saturday 2024-06-15.
         nav("2024-06-17", 101.0),
-        nav("2025-06-13", 105.0),
+        nav("2025-06-15", 105.0),
     ]
 
     result = _calculate_metrics(observations, 1)
 
-    assert result["anniversary_date"] == "2024-06-13"
-    assert result["start_date"] == "2024-06-13"
+    assert result["anniversary_date"] == "2024-06-15"
+    assert result["start_date"] == "2024-06-14"
 
 
 def test_metrics_are_anchored_to_latest_observation_not_server_date():

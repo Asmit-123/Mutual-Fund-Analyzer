@@ -12,7 +12,6 @@ from data_sources.mutual_fund_nav import (
     _normalize_name,
     get_fund_analytics,
 )
-from graph.nodes.fund_info import llm
 import requests
 
 
@@ -187,6 +186,7 @@ Mention trade-offs: a higher return can come with higher volatility or drawdown.
     ai_summary = ""
     ai_reasons: dict[str, str] = {}
     try:
+        from graph.nodes.fund_info import llm
         response = llm.invoke(prompt)
         raw = response.content.strip()
         raw = re.sub(r"^\x60{3}(?:json)?\s*|\s*\x60{3}$", "", raw, flags=re.I)

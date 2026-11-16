@@ -272,7 +272,7 @@ export default function Home() {
 
                 <section className="section">
                   <h2>AI-assisted ranking</h2>
-                  <p className="muted">Ranking is calculated from verified NAV metrics using the disclosed composite score; AI writes the evidence-based explanations.</p>
+                  <p className="muted">Ranking source: {report.ranking_source}. The model receives verified NAV metrics and the disclosed composite score; financial figures are calculated by the application.</p>
                   {report.ranked_funds.map((fund) => (
                     <div className="rank-card" key={fund.scheme_code}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>

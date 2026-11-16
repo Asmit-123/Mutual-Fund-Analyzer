@@ -70,20 +70,36 @@ def _normalize_name(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", " ", value.lower()).strip()
 
 
+def _scheme_display_name(item: dict[str, str]) -> str:
+    """Build a searchable/displayable name across AMFI's split metadata columns."""
+    parts = [
+        item.get("scheme_name", ""),
+        item.get("plan", ""),
+        item.get("option", ""),
+    ]
+    return " - ".join(part.strip() for part in parts if part and part.strip())
+
+
 def _resolve_scheme(schemes: list[dict[str, str]], requested_name: str) -> dict[str, str]:
     """Resolve the closest unambiguous scheme, preferring Direct Growth."""
     needle = _normalize_name(requested_name)
     if not needle:
         raise MarketDataError("A fund name is required.")
 
-    exact = [item for item in schemes if _normalize_name(item["scheme_name"]) == needle]
+    exact = [
+        item for item in schemes
+        if _normalize_name(_scheme_display_name(item)) == needle
+        or _normalize_name(item["scheme_name"]) == needle
+    ]
     if exact:
         matches = exact
     else:
         tokens = set(needle.split())
         matches = [
             item for item in schemes
-            if tokens and tokens.issubset(set(_normalize_name(item["scheme_name"]).split()))
+            if tokens and tokens.issubset(
+                set(_normalize_name(_scheme_display_name(item)).split())
+            )
         ]
     if not matches:
         raise MarketDataError(
@@ -107,7 +123,7 @@ def _resolve_scheme(schemes: list[dict[str, str]], requested_name: str) -> dict[
         )
 
     def score(item: dict[str, str]) -> tuple[int, int, int]:
-        full_name = _normalize_name(item["scheme_name"])
+        full_name = _normalize_name(_scheme_display_name(item))
         return (
             int("direct" in (item.get("plan", "") + " " + full_name).lower()),
             int("growth" in (item.get("option", "") + " " + full_name).lower()),

@@ -176,7 +176,7 @@ Verified data:
 Return ONLY valid JSON with this exact shape:
 {{
   "executive_summary": "2-4 sentences summarising the actual comparison.",
-  "ranking_reasons": [
+  "ranking": [
     {{"scheme_code": "exact code", "reason": "1-3 sentences grounded only in its supplied metrics"}}
   ],
   "limitations": "Mention that fund categories and benchmarks may differ, that the score is relative to this selected set, and that NAV-only data does not establish future suitability."
@@ -186,7 +186,6 @@ alpha, beta, Sharpe ratio, capture ratio, manager commentary, or market events.
 Mention trade-offs: a higher return can come with higher volatility or drawdown.
 """
     ai_summary = ""
-    ai_reasons: dict[str, str] = {}
     try:
         from graph.nodes.fund_info import llm
         response = llm.invoke(prompt)

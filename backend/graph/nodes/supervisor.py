@@ -225,7 +225,7 @@ ENTITY EXTRACTION RULES
 FALLBACK: If truly unclear → tasks: [qa_search]
 """
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 router_llm = llm.with_structured_output(RouterDecision, method="function_calling")
 

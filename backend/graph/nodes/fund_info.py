@@ -8,7 +8,7 @@ from pathlib import Path
 
 load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 def fetch_advisorkhoj_capture_ratio(fund_name: str, period_years: int) -> dict:
     print(f"fetch_advisorkhoj_capture_ratio for {fund_name}, period: {period_years}")

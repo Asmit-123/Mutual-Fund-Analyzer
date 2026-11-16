@@ -4,7 +4,7 @@ from graph.state import AgentState
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 def compare_fund_node(state: AgentState) -> dict:
     print("compare_fund_node")

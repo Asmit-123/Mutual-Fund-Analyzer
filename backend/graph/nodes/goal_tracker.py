@@ -4,7 +4,7 @@ import json
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 
 def goal_tracker_node(state: AgentState) -> dict:

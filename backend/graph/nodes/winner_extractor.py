@@ -2,7 +2,7 @@ from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage
 import json
 
-llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0, max_output_tokens=1000, api_key="$GROQ_API_KEY")
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2)
 
 def extract_winner_node(state: dict) -> dict:
     tool_results = state.get("tool_results", {})

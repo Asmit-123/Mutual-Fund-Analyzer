@@ -93,7 +93,18 @@ For each available scheme include:
 - NAV start/end dates and NAV values.
 - Total return, CAGR, annualized volatility and maximum drawdown.
 - Number of NAV observations and data source.
-Explain briefly what each metric means. State that historical returns are not guarantees.
+Explain metrics accurately using these definitions:
+- Growth option: the return is calculated from the NAV change. Income and gains
+  remain invested in the scheme and are reflected in its NAV; do not describe
+  Growth-option returns as excluding the fund's underlying income or gains.
+- Annualized volatility: the dispersion/variability of periodic NAV returns,
+  annualized using the supplied calculation. Do not describe it as a guaranteed
+  or typical +/- range around an average return.
+- Maximum drawdown: the largest peak-to-trough percentage decline in the
+  observed NAV series during the selected period.
+- Observation count: the number of unique NAV dates included in the selected
+  calculation window, not the number of return intervals.
+State that historical returns are not guarantees.
 If a fund failed, explain that its data was unavailable; do not fill gaps with estimates.
 
 IMPORTANT DATA LIMITATION:

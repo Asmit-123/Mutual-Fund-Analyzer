@@ -73,7 +73,7 @@ graph TD
 - **Language:** Python
 - **API Framework:** FastAPI
 - **Workflow & Agent Engine:** LangGraph & LangChain
-- **LLM:** OpenAI (`gpt-4o`)
+- **LLM:** Groq (`llama-3.3-70b-versatile`)
 - **Data Integrations:** Tavily Search Engine
 
 **Frontend:**

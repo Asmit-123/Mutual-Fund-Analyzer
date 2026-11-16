@@ -165,10 +165,17 @@ def _anniversary_date(as_of: date, years: int) -> date:
 def _calculate_metrics(
     observations: list[dict[str, Any]], period_years: int
 ) -> dict[str, Any]:
-    ordered = sorted(
-        (item for item in observations if item.get("nav", 0) > 0),
-        key=lambda item: item["date"],
-    )
+    # Count one observation per calendar date. Some upstream mirrors can
+    # return duplicate rows; retain the last valid row for each date.
+    by_date: dict[date, dict[str, Any]] = {}
+    for item in observations:
+        try:
+            nav_value = float(item.get("nav", 0))
+        except (TypeError, ValueError):
+            continue
+        if nav_value > 0:
+            by_date[item["date"]] = {**item, "nav": nav_value}
+    ordered = [by_date[day] for day in sorted(by_date)]
     if len(ordered) < 2:
         raise MarketDataError("Insufficient valid NAV observations.")
 

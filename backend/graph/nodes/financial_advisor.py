@@ -1,9 +1,9 @@
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from graph.state import AgentState
 from dotenv import load_dotenv
 load_dotenv()
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0.5)
+llm = ChatGroq(model="llama-3.3-70b-versatile", temperature=0.2, max_output_tokens=1000, api_key="$GROQ_API_KEY")
 
 ADVISOR_PROMPT = """
 You are a holistic Financial Advisor for Indian investors covering mutual funds, stocks, and overall financial planning.
